@@ -1,0 +1,143 @@
+Transform: AWS::Serverless-2016-10-31
+
+Parameters: {}
+
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "${AWS::StackName}-users"
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: mtg-stats-api-client
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      SupportedIdentityProviders:
+        - COGNITO
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
+  StatsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-table"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+  StatsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: mtg-stats-api
+      StageName: dev
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt UserPool.Arn
+            Identity:
+              Header: Authorization
+  PingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/ping/
+      Handler: handler.main
+      Runtime: python3.14
+      Events:
+        PingApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StatsApi
+            Path: /ping
+            Method: get
+            Auth:
+              Authorizer: NONE
+  GetCounterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/get_counter/
+      Handler: handler.main
+      Runtime: python3.14
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref StatsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref StatsTable
+      Events:
+        GetCounterApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StatsApi
+            Path: /counter
+            Method: get
+  IncrementCounterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/increment_counter/
+      Handler: handler.main
+      Runtime: python3.14
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref StatsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref StatsTable
+      Events:
+        IncrementCounterApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StatsApi
+            Path: /counter
+            Method: post
+  
+Outputs:
+  PingApiUrl:
+    Description: "API Gateway endpoint URL for the Ping endpoint"
+    Value: !Sub "https://${StatsApi}.execute-api.${AWS::Region}.amazonaws.com/dev/ping"
+  GetCounterApiUrl:
+    Description: "API Gateway endpoint URL for the Get Counter endpoint"
+    Value: !Sub "https://${StatsApi}.execute-api.${AWS::Region}.amazonaws.com/dev/counter"
+  StatsTableName:
+    Description: "DynamoDB table name"
+    Value: !Ref StatsTable
+  UserPoolId:
+    Description: "Cognito user pool ID"
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Description: "Cognito user pool app client ID"
+    Value: !Ref UserPoolClient
+  UserPoolArn:
+    Description: "Cognito user pool ARN"
+    Value: !GetAtt UserPool.Arn

@@ -1,0 +1,23 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "mtg-stats-stack"
+region = "af-south-1"
+
+[default.sync.parameters]
+template_file = "d:\\Coding\\MTGStats\\API\\mtg-stats-stack\\template.yaml"
+dependency_layer = false
+watch = true
+
+[dev.deploy.parameters]
+stack_name = "mtg-stats-sam-dev"
+resolve_s3 = true
+s3_prefix = "mtg-stats-sam-dev"
+region = "af-south-1"
+profile = "james"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+
+[dev.global.parameters]
+region = "af-south-1"
