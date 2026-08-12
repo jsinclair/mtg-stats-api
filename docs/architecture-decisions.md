@@ -46,8 +46,41 @@ The local workspace currently contains both `API` and `FrontEnd` folders. The ba
 
 Details:
 - The backend repo root should be the folder containing `template.yaml`.
-- The current backend root is `API/mtg-stats-stack`.
+- The current backend root is the `mtg-stats-api` repo.
 - The frontend should have its own repo and its own `AGENTS.md` if/when active development resumes there.
 
 Why:
 Separate repos keep deployment history, CI/CD, dependencies, and project instructions focused on the code they apply to.
+
+## 2026-08-12: Backend Source of Truth Is `mtg-stats-api`
+
+Decision:
+Use the `mtg-stats-api` repository as the backend source of truth.
+
+Context:
+The previous local `API/mtg-stats-stack` folder was migrated into a dedicated GitHub-backed repository.
+
+Details:
+- Backend development should happen in `mtg-stats-api`.
+- `template.yaml`, `samconfig.toml`, `src`, `docs`, and `AGENTS.md` live at the repo root.
+- The old `API` folder is no longer needed after migration.
+
+Why:
+The dedicated backend repo keeps SAM infrastructure, Lambda code, and backend decisions versioned together in the right project boundary.
+
+## 2026-08-12: Cognito `sub` Is the Internal User ID
+
+Decision:
+Use the Cognito `sub` claim as the stable internal user identifier.
+
+Context:
+The previous data model used human-readable player keys such as `p#carli`. Cognito users can sign in with email, and human-facing names may change over time.
+
+Details:
+- Lambda handlers read authenticated user claims from `event.requestContext.authorizer.claims`.
+- The internal player key should be derived as `p#<sub>`.
+- Human-facing names such as `carli` should be stored as profile data, not as primary identity.
+- The `/me` endpoint returns the authenticated user's `sub`, derived `playerKey`, email, email verification state, and Cognito username.
+
+Why:
+The Cognito `sub` claim is stable and unique for a user in the user pool, making it safer for DynamoDB keys and relationships than email or display names.

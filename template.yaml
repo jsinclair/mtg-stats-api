@@ -83,6 +83,19 @@ Resources:
             Method: get
             Auth:
               Authorizer: NONE
+  MeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/me/
+      Handler: handler.main
+      Runtime: python3.14
+      Events:
+        MeApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StatsApi
+            Path: /me
+            Method: get
   GetCounterFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -126,6 +139,9 @@ Outputs:
   PingApiUrl:
     Description: "API Gateway endpoint URL for the Ping endpoint"
     Value: !Sub "https://${StatsApi}.execute-api.${AWS::Region}.amazonaws.com/dev/ping"
+  MeApiUrl:
+    Description: "API Gateway endpoint URL for the Me endpoint"
+    Value: !Sub "https://${StatsApi}.execute-api.${AWS::Region}.amazonaws.com/dev/me"
   GetCounterApiUrl:
     Description: "API Gateway endpoint URL for the Get Counter endpoint"
     Value: !Sub "https://${StatsApi}.execute-api.${AWS::Region}.amazonaws.com/dev/counter"

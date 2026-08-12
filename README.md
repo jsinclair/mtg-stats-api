@@ -36,8 +36,9 @@ Use the following SAM CLI commands to manage your functions:
 
 The SAM template defines a Cognito user pool and app client for API authentication.
 The `/counter` `GET` and `POST` routes require a valid Cognito token in the
-`Authorization` header. The `/ping` route is intentionally public so it can be
-used as a simple health check.
+`Authorization` header. The `/me` route returns the authenticated user's Cognito
+identity claims. The `/ping` route is intentionally public so it can be used as
+a simple health check.
 
 Deploy the backend:
 
@@ -90,6 +91,12 @@ Call the protected API:
 
 ```sh
 curl -H "Authorization: Bearer <IdToken>" <GetCounterApiUrl>
+```
+
+Call the authenticated identity endpoint:
+
+```sh
+curl -H "Authorization: Bearer <IdToken>" <MeApiUrl>
 ```
 
 ## Advanced features
