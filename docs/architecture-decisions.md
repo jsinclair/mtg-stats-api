@@ -84,3 +84,21 @@ Details:
 
 Why:
 The Cognito `sub` claim is stable and unique for a user in the user pool, making it safer for DynamoDB keys and relationships than email or display names.
+
+## 2026-08-18: App Profile Data Lives in DynamoDB
+
+Decision:
+Store MTG Stats profile fields in DynamoDB instead of mirroring them into Cognito user attributes.
+
+Context:
+Cognito provides authentication and stable identity claims, while the app needs its own player-facing profile fields such as handle and display name.
+
+Details:
+- Profile items use `pk = p#<sub>` and `sk = profile`.
+- Cognito-derived fields such as `sub`, email, and email verification state are read from API Gateway authorizer claims.
+- The profile item stores app-owned fields such as `handle`, `displayName`, `createdAt`, and `updatedAt`.
+- `GET /me/profile` returns Cognito identity context plus the DynamoDB profile item if it exists.
+- `PUT /me/profile` creates or updates only app-owned profile fields for the authenticated user.
+
+Why:
+Keeping app profile data in DynamoDB lets the API evolve player-specific fields without coupling the domain model to Cognito attributes or allowing clients to choose identity fields.

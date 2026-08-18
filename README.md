@@ -37,8 +37,9 @@ Use the following SAM CLI commands to manage your functions:
 The SAM template defines a Cognito user pool and app client for API authentication.
 The `/counter` `GET` and `POST` routes require a valid Cognito token in the
 `Authorization` header. The `/me` route returns the authenticated user's Cognito
-identity claims. The `/ping` route is intentionally public so it can be used as
-a simple health check.
+identity claims. The `/me/profile` route reads and updates the signed-in user's
+app profile in DynamoDB. The `/ping` route is intentionally public so it can be
+used as a simple health check.
 
 Deploy the backend:
 
@@ -97,6 +98,22 @@ Call the authenticated identity endpoint:
 
 ```sh
 curl -H "Authorization: Bearer <IdToken>" <MeApiUrl>
+```
+
+Read the authenticated user's app profile:
+
+```sh
+curl -H "Authorization: Bearer <IdToken>" <MeProfileApiUrl>
+```
+
+Create or update the authenticated user's app profile:
+
+```sh
+curl -X PUT \
+  -H "Authorization: Bearer <IdToken>" \
+  -H "Content-Type: application/json" \
+  -d '{"handle":"carli","displayName":"Carli"}' \
+  <MeProfileApiUrl>
 ```
 
 ## Advanced features

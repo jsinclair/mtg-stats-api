@@ -28,3 +28,5 @@ This repository contains the MTG Stats backend API.
 - Cognito is the default API authorizer.
 - `/ping` is public.
 - `/counter` requires authentication.
+- `/me` returns authenticated Cognito identity claims.
+- `/me/profile` reads and updates the authenticated user's app profile in DynamoDB.
